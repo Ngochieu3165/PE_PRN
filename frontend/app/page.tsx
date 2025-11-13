@@ -17,10 +17,12 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
+  const [genres, setGenres] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<string>('');
+  const [genreFilter, setGenreFilter] = useState<string>('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
   // Dialog states
@@ -51,9 +53,14 @@ export default function Home() {
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      const data = await movieApi.getAll(searchTerm, sortOrder);
+      const data = await movieApi.getAll(searchTerm, sortOrder, genreFilter);
       setMovies(data);
       setFilteredMovies(data);
+      
+      // Extract unique genres from all movies
+      const uniqueGenres = Array.from(new Set(data.map(movie => movie.genre).filter((g): g is string => !!g)));
+      setGenres(uniqueGenres);
+      
       setError(null);
       setCurrentPage(1); // Reset to first page when data changes
     } catch (err) {
@@ -66,7 +73,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchMovies();
-  }, [searchTerm, sortOrder]);
+  }, [searchTerm, sortOrder, genreFilter]);
 
   // Calculate pagination
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -263,6 +270,17 @@ export default function Home() {
           </div>
           
           <select
+            value={genreFilter}
+            onChange={(e) => setGenreFilter(e.target.value)}
+            className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-cyan-500 focus:border-transparent min-w-[180px]"
+          >
+            <option value="">Filter by Genre</option>
+            {genres.map(genre => (
+              <option key={genre} value={genre}>{genre}</option>
+            ))}
+          </select>
+
+          <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-cyan-500 focus:border-transparent min-w-[160px]"
@@ -271,13 +289,6 @@ export default function Home() {
             <option value="asc">A → Z</option>
             <option value="desc">Z → A</option>
           </select>
-
-          <Button
-            onClick={() => fetchMovies()}
-            className="px-6 py-2.5 bg-transparent border-2 border-cyan-500 text-cyan-500 hover:bg-cyan-50 font-medium"
-          >
-            Apply
-          </Button>
 
           <Button 
             onClick={handleOpenCreate}

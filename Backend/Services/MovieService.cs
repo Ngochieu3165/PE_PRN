@@ -8,7 +8,7 @@ namespace Backend.Services;
 
 public interface IMovieService
 {
-    Task<List<MovieResponseDto>> GetAllMoviesAsync(string? searchTerm = null, string? sortOrder = null);
+    Task<List<MovieResponseDto>> GetAllMoviesAsync(string? searchTerm = null, string? genre = null, string? sortOrder = null);
     Task<MovieResponseDto?> GetMovieByIdAsync(string id);
     Task<MovieResponseDto> CreateMovieAsync(CreateMovieDto createMovieDto);
     Task<MovieResponseDto?> UpdateMovieAsync(string id, UpdateMovieDto updateMovieDto);
@@ -28,13 +28,19 @@ public class MovieService : IMovieService
         _storageService = storageService;
     }
 
-    public async Task<List<MovieResponseDto>> GetAllMoviesAsync(string? searchTerm = null, string? sortOrder = null)
+    public async Task<List<MovieResponseDto>> GetAllMoviesAsync(string? searchTerm = null, string? genre = null, string? sortOrder = null)
     {
-        var filter = Builders<Movie>.Filter.Empty;
+        var filterBuilder = Builders<Movie>.Filter;
+        var filter = filterBuilder.Empty;
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            filter = Builders<Movie>.Filter.Regex("name", new MongoDB.Bson.BsonRegularExpression(searchTerm, "i"));
+            filter &= filterBuilder.Regex("Name", new MongoDB.Bson.BsonRegularExpression(searchTerm, "i"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(genre))
+        {
+            filter &= filterBuilder.Eq("Genre", genre);
         }
 
         var query = _movies.Find(filter);
@@ -44,8 +50,10 @@ public class MovieService : IMovieService
         {
             query = sortOrder.ToLower() switch
             {
-                "asc" or "a-z" => query.SortBy(p => p.Name),
-                "desc" or "z-a" => query.SortByDescending(p => p.Name),
+                "name_asc" => query.SortBy(p => p.Name),
+                "name_desc" => query.SortByDescending(p => p.Name),
+                "rating_asc" => query.SortBy(p => p.Rating),
+                "rating_desc" => query.SortByDescending(p => p.Rating),
                 _ => query.SortByDescending(p => p.CreatedAt)
             };
         }

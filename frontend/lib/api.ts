@@ -3,10 +3,11 @@ import { Movie, CreateMovieDto, UpdateMovieDto } from '@/types/movie';
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000/api';
 
 export const movieApi = {
-  async getAll(search?: string, sort?: string): Promise<Movie[]> {
+  async getAll(search?: string, sort?: string, genre?: string): Promise<Movie[]> {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (sort) params.append('sort', sort);
+    if (genre) params.append('genre', genre);
     
     const url = `${API_BASE}/movies${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await fetch(url);

@@ -21,15 +21,17 @@ public class MovieController : ControllerBase
     /// Get all movies with optional search and sort
     /// </summary>
     /// <param name="search">Search term for movie name</param>
-    /// <param name="sort">Sort order: asc, desc, a-z, z-a</param>
+    /// <param name="genre">Filter by genre</param>
+    /// <param name="sort">Sort order: name_asc, name_desc, rating_asc, rating_desc</param>
     [HttpGet]
     public async Task<ActionResult<List<MovieResponseDto>>> GetAllMovies(
         [FromQuery] string? search = null,
+        [FromQuery] string? genre = null,
         [FromQuery] string? sort = null)
     {
         try
         {
-            var movies = await _movieService.GetAllMoviesAsync(search, sort);
+            var movies = await _movieService.GetAllMoviesAsync(search, genre, sort);
             return Ok(movies);
         }
         catch (Exception ex)
